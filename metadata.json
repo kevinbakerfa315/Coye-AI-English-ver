@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Coye AI - 2D Physics Agent",
+  "description": "An autonomous AI agent living in a 2D physics world. Powered by Gemini, it can think, draw objects, and interact with its environment.",
+  "requestFramePermissions": []
+}
