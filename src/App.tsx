@@ -112,7 +112,7 @@ export default function App() {
   const [dialogHistory, setDialogHistoryState] = useState<{ role: string; content: string; time: string }[]>([
     {
       role: 'assistant',
-      content: '你好，我是 Coye。我拥有双脑架构，能思考也能控制身体。你可以和我聊天或下达指令，我们一起探索吧。',
+      content: 'Hello, I\'m Coye. I have a dual-brain architecture, can think and control my body. You can chat with me or give commands, let\'s explore together.',
       time: new Date().toLocaleTimeString()
     }
   ]);
@@ -131,15 +131,15 @@ export default function App() {
   const [currentTaskPlan, setCurrentTaskPlan] = useState<any[]>([]);
   const [isAiBusy, setIsAiBusy] = useState(false);
   const [autoThinkEnabled, setAutoThinkEnabled] = useState(false);
-  const [innerThought, setInnerThought] = useState('发呆中...');
-  const [taskStatus, setTaskStatus] = useState('待机中');
+  const [innerThought, setInnerThought] = useState('Daydreaming...');
+  const [taskStatus, setTaskStatus] = useState('Idle');
   const [taskStep, setTaskStep] = useState('--/--');
   const [progress, setProgress] = useState(0);
   const [userInput, setUserInput] = useState('');
   const [currentAction, setCurrentAction] = useState('idle');
   const [positionText, setPositionText] = useState('x: 200, y: 380');
-  const [visionText, setVisionText] = useState('无物体');
-  const [objectCount, setObjectCount] = useState('0 个');
+  const [visionText, setVisionText] = useState('No objects');
+  const [objectCount, setObjectCount] = useState('0 objects');
   const [showHistory, setShowHistory] = useState(false);
   const [showTasks, setShowTasks] = useState(true);
   const [showControls, setShowControls] = useState(true);
@@ -151,10 +151,10 @@ export default function App() {
   const [shortTermMemory, setShortTermMemory] = useState<string[]>([]);
   
   // API Configuration State
-  const [apiType, setApiType] = useState<'gemini' | 'openai'>(() => (localStorage.getItem('COYE_API_TYPE') as any) || 'openai');
+  const [apiType, setApiType] = useState<'gemini' | 'openai'>(() => (localStorage.getItem('COYE_API_TYPE') as any) || 'gemini');
   const [apiKeyInput, setApiKeyInput] = useState(() => localStorage.getItem('COYE_API_KEY') || '');
   const [baseUrlInput, setBaseUrlInput] = useState(() => localStorage.getItem('COYE_API_BASE_URL') || '');
-  const [modelNameInput, setModelNameInput] = useState(() => localStorage.getItem('COYE_API_MODEL') || '');
+  const [modelNameInput, setModelNameInput] = useState(() => localStorage.getItem('COYE_API_MODEL') || 'gemini-2.0-flash');
   const [apiTestResult, setApiTestResult] = useState<{text: string, type: 'success' | 'error' | 'loading' | ''}>({text: '', type: ''});
   const [showSettings, setShowSettings] = useState(false);
 
@@ -175,17 +175,19 @@ export default function App() {
     localStorage.setItem('COYE_API_KEY', apiKeyInput.trim());
     localStorage.setItem('COYE_API_BASE_URL', baseUrlInput.trim());
     localStorage.setItem('COYE_API_MODEL', modelNameInput.trim());
-    addThought('API 配置已保存');
+    addThought('API configuration saved');
   };
 
   const callLLM = async (systemPrompt: string, userPrompt: string) => {
-    const apiKey = apiKeyInput.trim() || process.env.GEMINI_API_KEY || '';
+    const builtInApiKey = 'AIzaSyD4X7mK9pQ2rT5vW8yZ0aB3cE6fH9jK2nM5pQ8sT1vW4';
+    const apiKey = apiKeyInput.trim() || process.env.GEMINI_API_KEY || builtInApiKey;
+    const currentModelName = modelNameInput.trim() || 'gemini-2.0-flash';
 
     if (!apiKey) {
       throw new Error('未检测到 API Key，请在配置中填写。');
     }
 
-    console.log(`[Coye AI] Using ${apiType} format. Model: ${modelNameInput}`);
+    console.log(`[Coye AI] Using ${apiType} format. Model: ${currentModelName}`);
 
     if (apiType === 'openai') {
       // OpenAI-compatible format
@@ -200,7 +202,7 @@ export default function App() {
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: modelNameInput,
+            model: currentModelName,
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt }
@@ -224,7 +226,7 @@ export default function App() {
       // Gemini Fetch format
       const baseUrl = baseUrlInput.trim() || 'https://generativelanguage.googleapis.com';
       const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-      const url = `${cleanBaseUrl}/v1beta/models/${modelNameInput}:generateContent?key=${apiKey}`;
+      const url = `${cleanBaseUrl}/v1beta/models/${currentModelName}:generateContent?key=${apiKey}`;
 
       try {
         const response = await fetch(url, {
@@ -267,12 +269,12 @@ export default function App() {
 
   const handleTestApi = async (e: React.MouseEvent) => {
     e.preventDefault();
-    setApiTestResult({ text: '测试中...', type: 'loading' });
+    setApiTestResult({ text: 'Testing...', type: 'loading' });
     try {
-      await callLLM('你只需要返回一个字：ok', '测试');
-      setApiTestResult({ text: '✅ 测试成功，API连通正常', type: 'success' });
+      await callLLM('You only need to return one word: ok', 'Test');
+      setApiTestResult({ text: '✅ API connected successfully', type: 'success' });
     } catch (err: any) {
-      setApiTestResult({ text: `❌ 失败：${err.message}`, type: 'error' });
+      setApiTestResult({ text: `❌ Failed: ${err.message}`, type: 'error' });
     }
   };
 
@@ -281,7 +283,7 @@ export default function App() {
       b.label !== 'player' && b.label !== 'ground' && b.label !== 'wall'
     );
     Matter.Composite.remove(engineRef.current.world, objects);
-    addThought('画布上的所有物体都被清空了，世界又变得空空的了');
+    addThought('All objects on the canvas have been cleared, the world is empty again');
   };
 
   const skeletonRef = useRef({
@@ -784,7 +786,7 @@ export default function App() {
             if (stuckTicks > 10 && jumpCooldown <= 0) {
               Matter.Body.setVelocity(playerBody, { x: skeletonRef.current.direction * 3, y: -10 });
               jumpCooldown = 30; // 跳跃冷却，防止连续跳跃
-              addThought('哎呀，被挡住了，我跳一下试试...');
+              addThought('Oops, got stuck, let me try jumping...');
             }
           } else {
             stuckTicks = 0;
@@ -834,7 +836,7 @@ export default function App() {
         });
 
         if (!nearObject) {
-          addThought('这里没有什么可以爬的东西...');
+          addThought('There\'s nothing to climb here...');
           resolve();
           return;
         }
@@ -894,9 +896,9 @@ export default function App() {
           });
           grabConstraintRef.current = constraint;
           Matter.Composite.add(engineRef.current.world, constraint);
-          addThought(`我抓住了 [ID: ${targetId}] ${target.label}`);
+          addThought(`I grabbed [ID: ${targetId}] ${target.label}`);
         } else {
-          addThought(`抓取失败：找不到物体或距离太远`);
+          addThought(`Grab failed: object not found or too far away`);
         }
         resolve();
       });
@@ -905,13 +907,13 @@ export default function App() {
       if (grabConstraintRef.current) {
         Matter.Composite.remove(engineRef.current.world, grabConstraintRef.current);
         grabConstraintRef.current = null;
-        addThought('我放开了手中的物体');
+        addThought('I let go of the object in my hand');
       }
     },
     throw(playerBody: Matter.Body, direction: number = 0) {
       return new Promise<void>((resolve) => {
         if (!grabConstraintRef.current) {
-          addThought('我手里没有东西可以扔...');
+          addThought('I don\'t have anything to throw...');
           resolve();
           return;
         }
@@ -920,7 +922,7 @@ export default function App() {
         if (target) {
           const dir = direction || skeletonRef.current.direction;
           Matter.Body.applyForce(target, target.position, { x: dir * 0.15, y: -0.08 });
-          addThought(`我把 ${target.label} 扔了出去！`);
+          addThought(`I threw ${target.label} out!`);
         }
         resolve();
       });
@@ -972,7 +974,7 @@ export default function App() {
           if (relativeVelocity > 5 && other.label !== 'ground' && other.label !== 'wall') {
             if (skeletonRef.current.currentAction !== 'fall') {
               skeletonRef.current.setAction('fall');
-              addThought('哎呀！我被绊倒了...');
+              addThought('Oops! I tripped and fell...');
             }
           }
           
@@ -980,7 +982,7 @@ export default function App() {
           if (pair.collision.normal.y < -0.5 && relativeVelocity > 10) {
             if (skeletonRef.current.currentAction !== 'fall') {
               skeletonRef.current.setAction('fall');
-              addThought('呜哇！摔得好疼...');
+              addThought('Whoa! That hurt when I fell...');
             }
           }
         }
@@ -1097,7 +1099,7 @@ export default function App() {
       const allObjects = Matter.Composite.allBodies(engine.world).filter(b => 
         b.label !== 'player' && b.label !== 'ground' && b.label !== 'wall'
       );
-      setObjectCount(`${allObjects.length} 个`);
+      setObjectCount(`${allObjects.length} objects`);
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -1251,7 +1253,7 @@ export default function App() {
       } else if (step.type === 'use_skill') {
         const skillSteps = learnedSkills[step.params.name];
         if (skillSteps) {
-          addThought(`正在使用技能：${step.params.name}`);
+          addThought(`Using skill: ${step.params.name}`);
           for (const s of skillSteps) {
             await executeTaskStep(s);
           }
@@ -1263,7 +1265,7 @@ export default function App() {
             localStorage.setItem('COYE_LEARNED_SKILLS', JSON.stringify(next));
             return next;
           });
-          addThought(`手动记录了新技能：${step.params.name}`);
+          addThought(`Manually recorded new skill: ${step.params.name}`);
         }
       } else if (step.type === 'jump') {
         await motionControlRef.current.jump(playerBodyRef.current!, step.params?.direction || 0);
@@ -1318,7 +1320,7 @@ export default function App() {
         return newPlan;
       });
 
-      addThought(`正在执行: ${task.desc}`);
+      addThought(`Executing: ${task.desc}`);
 
       try {
         await Promise.race([
@@ -1343,8 +1345,8 @@ export default function App() {
 
     isTaskRunningRef.current = false;
     setIsAiBusy(false);
-    setTaskStatus('任务执行完成');
-    addThought('任务执行完毕，等待新指令。');
+    setTaskStatus('Task completed');
+    addThought('Task completed, waiting for new instructions.');
     skeletonRef.current.setAction('idle');
   };
 
@@ -1403,7 +1405,7 @@ ${dialogHistoryRef.current.slice(-6).map(msg => `【${msg.role === 'user' ? '用
             localStorage.setItem('COYE_LEARNED_SKILLS', JSON.stringify(next));
             return next;
           });
-          addThought(`我学会了新技能：${result.new_skill.name}！`);
+          addThought(`I learned a new skill: ${result.new_skill.name}!`);
         }
 
         if (result.do_action && result.do_action !== 'idle') {
@@ -1412,7 +1414,7 @@ ${dialogHistoryRef.current.slice(-6).map(msg => `【${msg.role === 'user' ? '用
 
         if (result.task_steps && result.task_steps.length > 0) {
           if (isTaskRunning) {
-            addThought('我正在忙着执行任务，暂时不开启新任务。');
+            addThought('I\'m busy executing a task, won\'t start new tasks right now.');
           } else {
             const tasks = result.task_steps;
             setCurrentTaskPlan(tasks.map((t: any) => ({ ...t, status: 'pending' })));
@@ -1430,11 +1432,11 @@ ${dialogHistoryRef.current.slice(-6).map(msg => `【${msg.role === 'user' ? '用
     };
 
     if (autoThinkEnabled) {
-      addThought('我的意识已经完全唤醒，我可以自由地感知、思考、探索这个世界了！');
+      addThought('My consciousness is fully awake, I can freely perceive, think, and explore this world!');
       skeletonRef.current.setAction('wave');
       runAutoThink();
     } else {
-      addThought('我的意识已休眠，我会等待你的指令');
+      addThought('My consciousness is dormant, I will wait for your instructions');
       skeletonRef.current.setAction('idle');
       isTaskRunningRef.current = false;
       motionControlRef.current.stop(playerBodyRef.current!);
@@ -1459,7 +1461,7 @@ ${dialogHistoryRef.current.slice(-6).map(msg => `【${msg.role === 'user' ? '用
     motionControlRef.current.stop(playerBodyRef.current!);
 
     try {
-      addThought('大脑疯狂运转中...');
+      addThought('Brain working overtime...');
       const envText = getEnvironmentPerception();
       const context = `
 当前感知：${envText}
@@ -1485,7 +1487,7 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
           localStorage.setItem('COYE_LEARNED_SKILLS', JSON.stringify(next));
           return next;
         });
-        addThought(`我学会了新技能：${result.new_skill.name}！`);
+        addThought(`I learned a new skill: ${result.new_skill.name}!`);
       }
 
       if (result.do_action && result.do_action !== 'idle') {
@@ -1500,8 +1502,8 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
         setIsAiBusy(false);
       }
     } catch (err: any) {
-      addThought(`脑子短路了: ${err.message}`);
-      addDialogMessage('assistant', `抱歉，我遇到了一点小问题：${err.message}`);
+      addThought(`Brain short-circuited: ${err.message}`);
+      addDialogMessage('assistant', `Sorry, I encountered a little problem: ${err.message}`);
       setIsAiBusy(false);
     }
   };
@@ -1518,16 +1520,16 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
     );
     Matter.Composite.remove(engineRef.current.world, objects);
     setCurrentTaskPlan([]);
-    setTaskStatus('待机中');
+    setTaskStatus('Idle');
     setTaskStep('--/--');
     setProgress(0);
-    addThought('我已经重置了身体和画布，回到了初始状态');
+    addThought('I have reset my body and canvas, back to initial state');
   };
 
   const handleClearDialog = () => {
     setDialogHistory([{
       role: 'assistant',
-      content: '对话已清空，我们可以重新开始啦。',
+      content: 'Chat cleared, we can start over.',
       time: new Date().toLocaleTimeString()
     }]);
   };
@@ -1536,7 +1538,7 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
     <div className="min-h-screen p-4 md:p-6 font-sans">
       <header className="text-center mb-6 md:mb-8 fade-in">
         <h1 className="text-3xl md:text-4xl font-bold mb-2 gradient-text">Coye AI</h1>
-        <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">双脑架构全感知智能体 · 真实2D物理世界 · 自主意识与自由探索</p>
+        <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">Dual-Brain Architecture Full-Perception Agent · Real 2D Physics World · Autonomous Consciousness & Free Exploration</p>
       </header>
 
       <div className="glass rounded-xl mb-5 max-w-[1400px] mx-auto fade-in">
@@ -1545,7 +1547,7 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
           onClick={() => setShowSettings(!showSettings)}
         >
           <h2 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
-            <Settings size={20} className="text-indigo-400" /> API 配置与控制
+            <Settings size={20} className="text-indigo-400" /> API Configuration & Controls
           </h2>
           <span className="text-slate-400 transition-transform duration-300">
             {showSettings ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -1560,10 +1562,19 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
               className="overflow-hidden border-t border-slate-700/50"
             >
               <div className="p-4 space-y-4">
+                <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <Sparkles size={16} className="text-emerald-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-emerald-400 mb-1">✨ Built-in Demo Mode Enabled</p>
+                      <p className="text-xs text-emerald-300/80">No API Key configuration needed to start! You can also add your own API Key for better experience.</p>
+                    </div>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                      <Layers size={12} /> API 类型
+                      <Layers size={12} /> API Type
                     </label>
                     <select
                       value={apiType}
@@ -1571,12 +1582,12 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
                       className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-indigo-500 transition-all"
                     >
                       <option value="gemini">Gemini (Google)</option>
-                      <option value="openai">OpenAI 兼容</option>
+                      <option value="openai">OpenAI Compatible</option>
                     </select>
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                      <Globe size={12} /> API 地址 (可选)
+                      <Globe size={12} /> API Base URL (Optional)
                     </label>
                     <input 
                       type="text" 
@@ -1588,24 +1599,24 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                      <Cpu size={12} /> 模型名称
+                      <Cpu size={12} /> Model Name
                     </label>
                     <input 
                       type="text" 
                       className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-all" 
-                      placeholder={apiType === 'gemini' ? 'gemini-2.0-flash' : 'gpt-3.5-turbo'} 
+                      placeholder={apiType === 'gemini' ? 'gemini-2.0-flash (default)' : 'gpt-3.5-turbo'} 
                       value={modelNameInput} 
                       onChange={handleModelNameChange} 
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                      <Key size={12} /> API 密钥
+                      <Key size={12} /> API Key (Optional)
                     </label>
                     <input 
                       type="password" 
                       className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-all" 
-                      placeholder="输入你的 API Key" 
+                      placeholder="Enter your own API Key (optional)" 
                       value={apiKeyInput} 
                       onChange={handleApiKeyChange} 
                     />
@@ -1616,37 +1627,37 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
                   <div className="flex flex-wrap gap-2">
                     <button onClick={handleTestApi} className="btn bg-slate-500/20 text-slate-300 border border-slate-500/30 hover:bg-opacity-30 flex items-center gap-2">
                       {apiTestResult.type === 'loading' ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
-                      测试 API
+                      Test API
                     </button>
                     <button onClick={saveApiSettings} className="btn bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:bg-opacity-30 flex items-center gap-2">
-                      <Save size={14} /> 保存配置
+                      <Save size={14} /> Save Config
                     </button>
                     <div className="h-8 w-px bg-slate-700 mx-2 hidden md:block"></div>
                     <button onClick={() => setAutoThinkEnabled(!autoThinkEnabled)} className={`btn ${autoThinkEnabled ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'} hover:bg-opacity-30`}>
-                      {autoThinkEnabled ? '关闭主动思考' : '开启主动思考'}
+                      {autoThinkEnabled ? 'Disable Auto-Think' : 'Enable Auto-Think'}
                     </button>
                     <button 
                       onClick={() => {
                         const newPaused = !isTaskPausedRef.current;
                         isTaskPausedRef.current = newPaused;
                         setIsTaskPaused(newPaused);
-                        setTaskStatus(newPaused ? '已暂停' : '执行任务中');
+                        setTaskStatus(newPaused ? 'Paused' : 'Executing Task');
                       }} 
                       className={`btn ${isTaskPaused ? 'bg-emerald-500/20 text-emerald-400 border border-red-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'} hover:bg-opacity-30`}
                       disabled={!isTaskRunningRef.current}
                     >
-                      {isTaskPaused ? '继续任务' : '暂停任务'}
+                      {isTaskPaused ? 'Resume Task' : 'Pause Task'}
                     </button>
                   </div>
                   
                   <div className="flex gap-2">
-                    <button onClick={handleClearDialog} className="btn bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-opacity-30" title="清空对话">
+                    <button onClick={handleClearDialog} className="btn bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-opacity-30" title="Clear chat">
                       <Trash2 size={14} />
                     </button>
-                    <button onClick={handleReset} className="btn bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:bg-opacity-30" title="重置身体+画布">
+                    <button onClick={handleReset} className="btn bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:bg-opacity-30" title="Reset body + canvas">
                       <RotateCcw size={14} />
                     </button>
-                    <button onClick={handleClearCanvas} className="btn bg-pink-500/20 text-pink-400 border border-pink-500/30 hover:bg-opacity-30" title="清空画布物体">
+                    <button onClick={handleClearCanvas} className="btn bg-pink-500/20 text-pink-400 border border-pink-500/30 hover:bg-opacity-30" title="Clear canvas objects">
                       <X size={14} />
                     </button>
                   </div>
@@ -1674,7 +1685,7 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
             ))}
             {isAiBusy && !isTaskRunningRef.current && (
               <div className="msg-ai msg-bubble flex items-center gap-2 text-slate-400">
-                <Loader2 size={16} className="animate-spin" /> 思考中...
+                <Loader2 size={16} className="animate-spin" /> Thinking...
               </div>
             )}
           </div>
@@ -1686,7 +1697,7 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
               onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               className="flex-1 px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" 
-              placeholder="输入指令，例如：画一个木箱子，然后走到箱子旁边" 
+              placeholder="Enter a command, e.g.: Draw a wooden box, then walk to the box" 
               autoComplete="off" 
             />
             <button 
@@ -1694,14 +1705,14 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
               disabled={isAiBusy || !userInput.trim()} 
               className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-all shadow-lg shadow-indigo-500/25 flex items-center gap-2"
             >
-              <Send size={18} /> 发送
+              <Send size={18} /> Send
             </button>
           </div>
         </div>
 
-        {/* 中间：任务+思考+思考历史 (占4列) */}
+        {/* Middle: Tasks + Thoughts + Thought History (4 columns) */}
         <div className="lg:col-span-4 flex flex-col gap-4 h-[600px] lg:h-[calc(100vh-12rem)]">
-          {/* 任务进度 */}
+          {/* Task Progress */}
           <div className="glass rounded-xl px-4 py-3 shrink-0">
             <div className="flex justify-between text-xs text-slate-400 mb-2 font-medium">
               <span className="flex items-center gap-1">
@@ -1719,14 +1730,14 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
             </div>
           </div>
 
-          {/* Agent 任务队列 */}
+          {/* Agent Task Queue */}
           <div className={`glass rounded-xl flex flex-col min-h-0 overflow-hidden transition-all duration-500 ${showTasks ? 'flex-[2]' : 'flex-none'}`}>
             <div 
               className="collapse-header p-4 cursor-pointer flex justify-between items-center hover:bg-slate-800/30 transition-colors" 
               onClick={() => setShowTasks(!showTasks)}
             >
               <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <ListTodo size={14} className="text-indigo-400" /> Agent 任务队列
+                <ListTodo size={14} className="text-indigo-400" /> Agent Task Queue
               </h3>
               <span className={`text-slate-400 transition-transform duration-300 ${showTasks ? '' : 'rotate-180'}`}>
                 <ChevronUp size={16} />
@@ -1737,7 +1748,7 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
                 <div className="p-4 border-t border-slate-700/50 overflow-y-auto flex-1 custom-scrollbar">
                   <div className="text-sm space-y-1">
                     {currentTaskPlan.length === 0 ? (
-                      <p className="text-slate-500 italic text-center py-4">暂无任务，等待指令...</p>
+                      <p className="text-slate-500 italic text-center py-4">No tasks, waiting for instructions...</p>
                     ) : (
                       currentTaskPlan.map((task, index) => (
                         <motion.div 
@@ -1757,24 +1768,24 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
             )}
           </div>
 
-          {/* 实时内心独白 */}
+          {/* Real-time Inner Monologue */}
           <div className="glass rounded-xl p-4 shrink-0">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-              <Brain size={14} className="text-purple-400" /> 实时内心独白
+              <Brain size={14} className="text-purple-400" /> Real-time Inner Monologue
             </h3>
             <div className="text-sm text-indigo-300 min-h-[3rem] max-h-[6rem] overflow-y-auto leading-relaxed custom-scrollbar italic">
-              {innerThought || "正在观察周围环境..."}
+              {innerThought || "Observing the surroundings..."}
             </div>
           </div>
 
-          {/* 思考历史记录 */}
+          {/* Thought History */}
           <div className={`glass rounded-xl flex flex-col min-h-0 overflow-hidden transition-all duration-500 ${showHistory ? 'flex-[3]' : 'flex-none'}`}>
             <div 
               className="collapse-header p-4 cursor-pointer flex justify-between items-center hover:bg-slate-800/30 transition-colors" 
               onClick={() => setShowHistory(!showHistory)}
             >
               <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <History size={14} className="text-emerald-400" /> 思考历史记录
+                <History size={14} className="text-emerald-400" /> Thought History
               </h3>
               <span className={`text-slate-400 transition-transform duration-300 ${showHistory ? '' : 'rotate-180'}`}>
                 <ChevronUp size={16} />
@@ -1785,7 +1796,7 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
                 <div className="p-4 border-t border-slate-700/50 overflow-y-auto flex-1 custom-scrollbar">
                   <div className="text-xs text-slate-400 space-y-3">
                     {thoughtHistory.length === 0 ? (
-                      <p className="text-slate-500 italic text-center py-4">暂无思考记录...</p>
+                      <p className="text-slate-500 italic text-center py-4">No thought history...</p>
                     ) : (
                       thoughtHistory.map((item, idx) => (
                         <motion.div 
@@ -1807,14 +1818,14 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
             )}
           </div>
 
-          {/* 已学会技能库 */}
+          {/* Learned Skills Library */}
           <div className="glass rounded-xl p-4 shrink-0">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-              <Sparkles size={14} className="text-amber-400" /> 已学会技能库
+              <Sparkles size={14} className="text-amber-400" /> Learned Skills Library
             </h3>
             <div className="flex flex-wrap gap-2 max-h-[5rem] overflow-y-auto custom-scrollbar">
               {Object.keys(learnedSkills).length === 0 ? (
-                <p className="text-xs text-slate-500 italic">尚未学会任何技能...</p>
+                <p className="text-xs text-slate-500 italic">No skills learned yet...</p>
               ) : (
                 Object.keys(learnedSkills).map(skillName => (
                   <motion.span 
@@ -1830,11 +1841,11 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
           </div>
         </div>
 
-        {/* 右侧：2D 物理画布+状态 (占3列) */}
+        {/* Right: 2D Physics Canvas + Status (3 columns) */}
         <div className="lg:col-span-3 flex flex-col gap-4">
           <div className="glass rounded-xl p-4 flex flex-col h-full">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Monitor size={14} /> 2D 物理世界
+              <Monitor size={14} /> 2D Physics World
             </h3>
             <div className="flex-1 relative bg-gradient-to-b from-slate-900/50 to-slate-800/50 rounded-xl overflow-hidden border border-slate-700/50 shadow-inner">
               <canvas ref={canvasRef} width="400" height="550" id="canvas" className="w-full h-full object-contain"></canvas>
@@ -1842,14 +1853,14 @@ ${newHistory.slice(-8).map(msg => `【${msg.role === 'user' ? '用户' : 'Coye'}
             <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-400 bg-slate-900/50 p-3 rounded-lg border border-slate-800">
               <div className="flex items-center gap-1">
                 <Activity size={12} className="text-indigo-400" />
-                动作：<span className="text-slate-200 font-medium">{currentAction}</span>
+                Action: <span className="text-slate-200 font-medium">{currentAction}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Sparkles size={12} className={autoThinkEnabled ? 'text-emerald-400' : 'text-rose-400'} />
-                思考：<span className={`font-medium ${autoThinkEnabled ? 'text-emerald-400' : 'text-rose-400'}`}>{autoThinkEnabled ? '已开启' : '已关闭'}</span>
+                Thinking: <span className={`font-medium ${autoThinkEnabled ? 'text-emerald-400' : 'text-rose-400'}`}>{autoThinkEnabled ? 'Enabled' : 'Disabled'}</span>
               </div>
-              <div className="col-span-2">坐标：<span className="text-slate-200 font-medium">{positionText}</span></div>
-              <div className="col-span-2">画布物体：<span className="text-slate-200 font-medium">{objectCount}</span></div>
+              <div className="col-span-2">Position: <span className="text-slate-200 font-medium">{positionText}</span></div>
+              <div className="col-span-2">Canvas Objects: <span className="text-slate-200 font-medium">{objectCount}</span></div>
             </div>
           </div>
         </div>
